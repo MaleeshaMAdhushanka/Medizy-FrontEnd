@@ -1,12 +1,77 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const SignInForm = () => {
+import Message from "../common/Message";
+import { login } from "../../api/auth";
 
 
+const SignInForm = ({ initialROle = "CLIENT"}) => {
+
+const [role, setRole] = useState(initialROle);
+
+const [form, setForm] = useState({
+    username: "",
+    password: "",
+    remember: false,
+});
+
+const [error, setError] = useState(null);
+const[isLoading, setIsLoading] = useState(false);
+const [showPassword, setShowPassword] = useState(false);
+
+const [toast, setToast] = useState({
+    isOpen: false,
+    type: "info",
+    title: "",
+    message: "",
+});
 
    const navigate = useNavigate();
+
+   const showToast = (type, title, message) => {
+    setToast({isOpen: true, type, title, message});
+   };
+
+   const closeToast = () => {
+    setToast((prev) => ({...prev, isOpen: false}));
+   };
+
+
+   const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+
+   };
+
+   const handleChange = (e) => {
+     const {name, value, type, checked }   =   e.target;
+      setForm((s) => ({... s, [name]: type === "checkbox" ? checked : value}));
+   };
+
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setError(null);
+
+    };
+
+    if(!form.username || !form.password){
+        showToast(
+            "warning",
+            "Missing Information",
+            "Please provide email/mobile and password"
+        );
+        return;
+    }
+
+    ///Use user name (email or mobile) for the API call
+    login(form.username, form.password)
+           
+
+
+
+
     return (
         <>
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
              <div className="flex items-center justify-between">
                 
             </div>
@@ -14,8 +79,8 @@ const SignInForm = () => {
                 <label className="block text-sm text-gray-600">Email or Mobile</label>
                 <input
                    name="username"
-                   value= {}
-                   onChange={}
+                   value= {form.username}
+                   onChange={handleChange}
                    type="text"
                    placeholder="you@example.com or 077 000 0000"
                    className="w-full px-3 py-2 border rounded-lg"
@@ -27,16 +92,16 @@ const SignInForm = () => {
                 <div className="relative">
                     <input
                          name="password"
-                         value={}
-                         onChange={}
-                         type={ ? "text":"password"}
+                         value={form.password}
+                         onChange={handleChange}
+                         type={ showPassword ? "text":"password"}
                          placeholder="Enter your password"
                          className="w-full px-3 py-2 pr-10 border rounded-lg"
                     
                     />
                     <button 
                       type="button"
-                      onClick={}
+                      onClick={togglePasswordVisibility}
                       className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                       aria-label={ showPassword ? "Hide password" : "Show password"}
                     >
@@ -88,8 +153,8 @@ const SignInForm = () => {
                     <input 
                       type="checkbox" 
                       name="remember"
-                      checked={}
-                      onChange={}
+                      checked={form.remember}
+                      onChange={handleChange}
                       
                     />
                     <span>Remember me</span>
@@ -108,7 +173,7 @@ const SignInForm = () => {
              <div>
                 <button
                   type="submit"
-                  disabled={}
+                  disabled={isLoading}
                   className="w-full py-3 text-white transition-all duration-300 rounded-lg bg-primary-blue hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? "Signing In ...": "Sign In"}
@@ -117,13 +182,22 @@ const SignInForm = () => {
 
              </div>
 
+         </form>
 
-
-        </form>
-
-        
-        
-        
+            <Message
+            isOpen={toast.isOpen}
+            onClose={closeToast}
+            type={toast.type}
+            message={toast.message}
+            showCloseButton={true}
+            autoClose={true}
+            autoCloseDelay={
+                toast.type === "success" ? 2000 : toast.type === "error" ? 4000 : 3000
+            }
+            position="top-right"
+            
+            />
+            
         </>
 
     );
