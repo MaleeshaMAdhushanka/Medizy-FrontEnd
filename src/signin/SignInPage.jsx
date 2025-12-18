@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import SignInLogo from "../components/signin/SignInLogo";
-
+import SignInForm from "../components/signin/SignInForm";
 
 const SignInPage = () => {
     const location = useLocation();
     const successMessage = location.state?.message;
   
     return (
-        <div  className="relative flex items-center justify-center min-h-screen px-4 py-8 overflow-hidden bg-gradient-to-br from-white via-blue-50 to-accent-cyan/10">
+        <div  className="relative flex items-center justify-center min-h-screen px-4 py-8 overflow-hidden bg-gradient-to-br from-white via-blue-50 to-accent-cyan/20">
             <div
               className="absolute inset-0 z-0"
                 style={{
@@ -21,7 +21,7 @@ const SignInPage = () => {
             </div>
             <div className="z-10 w-full max-w-xl">
                 <div className="w-full p-8 bg-white shadow-md rounded-3xl" >
-                    <div className="flex items-center justify-center mb-6 md:justify-center">
+                    <div className="flex items-center justify-center mb-1 md:justify-center">
                         <SignInLogo/>
 
                     </div>
@@ -38,7 +38,8 @@ const SignInPage = () => {
                             {successMessage}
                          </div>   
                     )}
-                    {/*  */}
+                    
+                    <SignInForm/>
                     <div className="mt-4 text-sm text-center text-gray-600">
                         New here?{""}
                         <Link to="">
