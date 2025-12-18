@@ -30,7 +30,7 @@ const SignInPage = () => {
                         Sign in to your account
                     </h2>
                     <p className="mb-3 text-xs text-center text-gray-500 sm:text-sm" >
-                        Welcome back ! Please enter your details.
+                        Welcome back! Please enter your details.
                     </p>
 
                     {successMessage && (
