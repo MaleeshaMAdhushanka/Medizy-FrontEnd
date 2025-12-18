@@ -6,7 +6,7 @@ import { login } from "../../api/auth";
 
 const SignInForm = ({ initialROle = "CLIENT"}) => {
 
-// const [role, setRole] = useState(initialROle);
+const [role, setRole] = useState(initialROle);
 
 const [form, setForm] = useState({
     username: "",
@@ -51,24 +51,132 @@ const [toast, setToast] = useState({
         e.preventDefault();
         setError(null);
 
-    };
+  
 
-    if(!form.username || !form.password){
+     if(!form.username || !form.password){
         showToast(
             "warning",
             "Missing Information",
             "Please provide email/mobile and password"
         );
         return;
-    }
+     }
 
-    ///Use user name (email or mobile) for the API call
-    login(form.username, form.password)
+     setIsLoading(true);
+
+     ///Use user name (email or mobile) for the API call
+     login(form.username, form.password)
+      .then((res) => {
+        console.log("Login response:", res);
+
+        // Check if login was successful based on API response structure
+        if (res && res.isSuccess) {
+          let user;
+          let accessToken;
+
+          // Handle different response structures
+          if (res.content && res.content.user) {
+            user = res.content.user;
+            accessToken = res.content.accessToken;
+          } else if (res.content) {
+            user = res.content;
+            accessToken = res.content.accessToken;
+          } else {
+            throw new Error("Invalid response structure");
+          }
+
+          const userType = user.userType;
+
+          // Check if user type is authorized
+          const authorizedTypes = ["DOCTOR", "CLIENT", "AGENT"];
+          if (!authorizedTypes.includes(userType)) {
+            showToast(
+              "error",
+              "Unauthorized Access",
+              "Your account type is not authorized."
+            );
+            return;
+          }
+
+          // Store tokens properly
+          if (form.remember) {
+            if (accessToken) {
+              localStorage.setItem("access_token", accessToken);
+            } else {
+              localStorage.setItem(
+                "access_token",
+                `mock_${user.id}_${Date.now()}`
+              );
+            }
+            localStorage.setItem("mock_user", JSON.stringify(user));
+          } else {
+            if (accessToken) {
+              sessionStorage.setItem("access_token", accessToken);
+            } else {
+              sessionStorage.setItem(
+                "access_token",
+                `mock_${user.id}_${Date.now()}`
+              );
+            }
+            sessionStorage.setItem("mock_user", JSON.stringify(user));
+          }
+
+          showToast(
+            "success",
+            "Login Successful",
+            `Welcome back, ${
+              user.f_name || user.name || "User"
+            }! Redirecting...`
+          );
+
+          // Navigate based on user type with proper delay
+          setTimeout(() => {
+            const userRole = userType.toLowerCase();
+
+            console.log("Navigating user with role:", userRole);
+
+            try {
+              switch (userRole) {
+                case "doctor":
+                  navigate("/", { replace: true });
+                  break;
+                case "client":
+                  navigate("/", { replace: true });
+                  break;
+                case "agent":
+                  navigate("/", { replace: true }); // Update when agent dashboard is ready
+                  break;
+                default:
+                  navigate("/", { replace: true });
+              }
+            } catch (navError) {
+              console.error("Navigation error:", navError);
+              // Fallback navigation
+              window.location.href = "/";
+            }
+          }, 2000); // Increased delay to ensure state is set
+        } else {
+          showToast(
+            "error",
+            "Login Failed",
+            res?.message || "Invalid credentials. Please try again."
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Login error:", err);
+        showToast(
+          "error",
+          "Connection Error",
+          err.message ||
+            "Unable to connect to server. Please check your internet connection."
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+    };
            
-
-
-
-
     return (
         <>
         <form onSubmit={handleSubmit} className="space-y-4">
