@@ -6,7 +6,7 @@ import { login } from "../../api/auth";
 
 const SignInForm = ({ initialROle = "CLIENT"}) => {
 
-const [role, setRole] = useState(initialROle);
+// const [role, setRole] = useState(initialROle);
 
 const [form, setForm] = useState({
     username: "",
