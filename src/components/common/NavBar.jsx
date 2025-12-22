@@ -1,6 +1,7 @@
-import { useCallback, useState , useRef} from "react";
+import { useCallback, useState , useRef, useEffect} from "react";
 import { LOGO } from "../../assets/logo";
 import { useNavigate } from "react-router-dom";
+import { getUserProfile } from "../../api/user";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,14 +20,118 @@ const NavBar = () => {
 
    //Memoized toast functions
    const showToast = useCallback ((type, title, message) => {
-
+     setToast({ isOpen: true, type, title, message});
    }, []);
 
+   const closeToast = useCallback (() => {
+    setToast((prev) => ({ ...prev, isOpen: false}));
+   });
+
+   //Check authentication status
+   const checkAuthStatus = useCallback (() => {
+   const accessToken = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+   const userStr = localStorage.getItem("mock_user") || sessionStorage.getItem("mock_user");
+   
+   console.log("Nav bar - Checking auth status: ", {
+     hasToken: !!accessToken,
+     hasUser: !!userStr,
+   });
+
+   if(!accessToken || !userStr){
+     return null;
+   }
+
+   try {
+    JSON.parse(userStr);
+   } catch (error){
+    console.log("NavBar - Error parsing user data:" , error);
+
+    //Clear corrupted data
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("mock_user");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("mock_user");
+    return null;
+
+   }
+   
+   }, []);
+
+   //Fetch user profile with better error handling
+
+   useEffect(() => {
+     const fetchUserProfile = async () => {
+      try {
+        setIsLoading(true);
+
+        //First check if user is authenticated
+       const localUser =  checkAuthStatus();
+        if(!localUser){
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        //Set user from local storage first for immediate 
+        setUser(localUser);
+
+        //Then fetch profile data from API
+        try {
+          const response = await getUserProfile();
+          if(response && response.isSuccess && response.content){
+            setUser(response.content);
+            //update local storage with fresh data
+            localStorage.setItem("mock_user", JSON.stringify(response.content));
+
+          }
+
+        } catch (apiError) {
+          console.log("Api call failed, using cached user data:", apiError);
+          //If API calls fails , we have local user data continue with that
+          //Axios interceptor will handle token refresh automatically
+          
+        }
+
+      } catch (error) {
+        console.log("Critical error in profile fetch:", error);
+        setUser(null);
+        showToast("error", "Authentication Error", "Please sign in again to continue");
+
+      } finally {
+        setIsLoading(false);
+      }
+     };
+     
+     fetchUserProfile();
+
+   },[checkAuthStatus, showToast]);
+
+   //Derived state
+
+   const isLoggedIn = !!user;
+   const role = user?.userType?.toLowerCase() || "guest";
+
+   //Menu handler
+   const toggleMenu = useCallback (() => {
+    setIsMenuOpen((prev) => !prev);
+   }, []);
 
   //Scroll to top on page load
-  const scrollToSection = useCallback (() => {
+  const scrollToSection = useCallback ((sectionId) => {
+    //If not on homePage, navigate to home first
+    if(window.location.pathname !== "/"){
+      navigate("/");
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
 
-  });
+    } else {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    setIsMenuOpen(false);
+
+  }, [navigate]);
 
 
   //loading state
