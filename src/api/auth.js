@@ -1,4 +1,5 @@
-import { authApi } from "./config/api";
+import { message } from "antd";
+import { authApi, api } from "./config/api";
 import EndPoints from "./config/endpoints";
 
 
@@ -53,6 +54,30 @@ export const register = async () => {
 //Logout function
 
 export const logout = async () => {
+    try {
+        await api.post(EndPoints.LOGOUT);
+
+        //Clear all authentication data
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("mock_user");
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("mock_user");
+
+        console.log("Logout successful, all tokens cleared.");
+        return { isSuccess: true, message: "Logged out successfully" };
+    } catch (error) {
+        //Even if Api calls fails, clear local storage for security
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("mock_user");
+        sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("mock_user");
+
+        console.warn("Logout API failed, but local storage cleared:",error.message);
+        
+        //Don't throw error here - logout should always succeed locally
+        return{ isSuccess: false, message: error.message};
+
+    }
 
 };
 

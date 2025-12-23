@@ -1,7 +1,9 @@
 import { useCallback, useState , useRef, useEffect} from "react";
 import { LOGO } from "../../assets/logo";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getUserProfile } from "../../api/user";
+import { logout } from "../../api/auth";
+import Message from "./Message";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -106,11 +108,6 @@ const NavBar = () => {
 
    },[checkAuthStatus, showToast]);
 
-   //Derived state
-
-   const isLoggedIn = !!user;
-   const role = user?.userType?.toLowerCase() || "guest";
-
    //Menu handler
    const toggleMenu = useCallback (() => {
     setIsMenuOpen((prev) => !prev);
@@ -132,6 +129,120 @@ const NavBar = () => {
     setIsMenuOpen(false);
 
   }, [navigate]);
+
+  const handleSignIn = useCallback (() => {
+    navigate("/signin");
+    setIsMenuOpen(false);
+  },[navigate]);
+
+
+  const handleProfileDropdown = useCallback(() =>{
+     setIsProfileDropdownOpen((prev) => !prev);
+  }, []);
+
+    //Derived state
+
+   const isLoggedIn = !!user;
+   const role = user?.userType?.toLowerCase() || "client";
+
+  const handleProfileMenuClick = useCallback( async (action) => {
+    setIsProfileDropdownOpen(false);
+    setIsMenuOpen(false);
+    try {
+      switch (action) {
+        case  "profile":
+          if (role === "doctor") {
+            navigate("/doctor-profile");
+          } else if (role === "agent") {
+            navigate("/agent-profile");
+          } else {
+            navigate("/client-profile");
+          }
+          break;
+
+          case "appointments":
+            navigate("/my-appointments");
+            break;
+
+          case "logout":
+            showToast("info", "Signing Out", "Please wait while we sign you out...");
+
+            try {
+              // Call logout API (axios will handle any token refresh if needed)
+              await  logout();
+
+
+              //Clear  all auth data
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("mock_user");
+              sessionStorage.removeItem("access_token");
+              sessionStorage.removeItem("mock_user");
+            
+              setUser(null);
+              showToast("Success", "Signed out Successfully");
+
+              setTimeout(() => {
+                navigate("/signin", {replace: true});
+              }, 1500);
+            } catch (logoutError) {
+              console.error("Logout API error:", logoutError);
+
+              //Even if API calls fails clear local data for security
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("mock_user");
+              sessionStorage.removeItem("access_token");
+              sessionStorage.removeItem("mock_user");
+
+              setUser(null);
+              showToast("Warning", "Logout Waring", "Session cleared for security. you will be redirected");
+
+              setTimeout(() => {
+                navigate("/signin", {replace: true});
+
+              }, 2000);
+            }
+            break;
+           default:
+            console.warn("Unknown Profile menu action:", action);
+            
+      }
+    } catch (error) {
+        console.error("Error handling profile menu action", error);
+        showToast("error", "Action Failed", "Unable to complete the requested action.");
+        
+    }
+
+  }, [role,navigate, showToast]);
+
+  //Close drop down on outside click
+  useEffect(() => {
+    const handleClickOutSide = (event) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    if (isProfileDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutSide);
+      return () => document.removeEventListener("mousedown", handleClickOutSide);
+    }
+
+  }, [isProfileDropdownOpen]);
+
+  //helper functions
+  const getInitials = useCallback((firstName, lastName) => {
+    if (!firstName) return "?";
+    const first = firstName.charAt(0).toUpperCase();
+    const last = lastName ? lastName.charAt(0).toUpperCase() : "";
+    return first + last;
+  }, []);
+
+
+  const getFullName = useCallback(() => {
+    if (!user) return "";
+    const firstName = user.f_name || "";
+    const lastName = user.l_name || "";
+    return `${firstName} ${lastName}`.trim() || "User";
+  }, [user]);
 
 
   //loading state
@@ -223,54 +334,266 @@ const NavBar = () => {
                 {/* Desktop CTA/ Profile  */}
 
                 <div className="items-center hidden space-x-4 md:flex">
-                  { (
+                  { !isLoggedIn ? (
                     <button
-                     onClick={}
+                     onClick={handleSignIn}
                      className="px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md text-primary-blue hover:text-primary-dark"
                     >
                       SignIn
 
                     </button>
                   ) : (
-                    <div>
+                    <div className="relative" ref={profileDropdownRef}>
+                      <button 
+                      onClick={handleProfileDropdown}
+                      className="flex items-center px-3 py-2 space-x-3 transition-all duration-200 rounded-lg hover:bg-primary-blue/10"
+                      aria-expanded={isProfileDropdownOpen}
+                      aria-haspopup="true"
+                      >
+                        { user.profileImage ? (
+                          <img
+                            src={user.profileImage}
+                            alt={`${getFullName()} profile`}
+                            className="object-cover border-2 rounded-full w-9 h-9 border-primary-blue/20"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
 
+                        ) : (
+                          <span className="flex items-center justify-center text-lg font-bold border-2 rounded-full w-9 h-9 bg-primary-blue/10 text-primary-blue border-primary-blue/20">
+                            {getInitials(user.f_name, user.l_name)}
+                          </span>
+
+                        )}
+                        <span className="text-sm font-semibold text-primary-dark">
+                          {role === "doctor" ? "Dr. " : ""}
+                          {role === "agent" ? "Agent " : ""}
+                          {getFullName()}
+                        </span>
+                        <svg 
+                          className={`w-4 h-4 text-primary-blue transition-transform duration-200 ${
+                          isProfileDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </button>
+
+                      {/* Dropdown */}
+                      { isProfileDropdownOpen && (
+                        <div className="absolute right-0 z-50 w-48 py-2 mt-2 bg-white border border-gray-100 shadow-lg rounded-xl">
+                          <button
+                           onClick={() => handleProfileMenuClick ("profile")}
+                           className="w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+                          >
+                            Profile
+                          </button>
+                          {/* only show My Appointments for client */}
+                          {role !== "doctor" && role !== "agent" && (
+                            <>
+                             <button
+                              onClick={() => handleProfileMenuClick("appointments")}
+                              className="w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+
+                             >
+
+                              My Appointments
+                             </button>
+                             {role === "client" && (
+                              <Link 
+                               to="/my-bookings"
+                               className="block w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+                               onClick={() => setIsProfileDropdownOpen(false)}
+                              
+                              >
+
+                               My Bookings
+                              </Link>
+                             )}
+                          
+                            </>
+                            
+                          )}
+                          <button
+                          onClick={() => handleProfileMenuClick("logout")}
+                          className="w-full px-4 py-2 text-left text-red-600 transition-all duration-200 hover:bg-red-50"
+                          
+                          >
+                            Logout
+                          </button>
+            
+                        </div>
+                      )}
                     </div>
-
-                  )
-
-                  }
-
-
-
-
+                  )}
                 </div>
 
                 {/* Mobile menu button  */}
-                <div>
-                  <button>
-
+                <div className="md:hidden">
+                  <button
+                   onClick={toggleMenu}
+                   className="p-2 transition-colors duration-300 rounded-md text-primary-dark hover:text-primary-blue"
+                   aria-label="Toggle menu"
+                  >
+                    <svg className="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                      {isMenuOpen ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                      )}
+                    </svg>
                   </button>
-
-
                 </div>
               
-
-
             </div>
 
         </div>
         {/* Mobile Navigation Menu  */}
+        {isMenuOpen && (
+          <div className="bg-white border-t border-gray-100 shadow-lg md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1">
 
+              <button 
+               onClick={() => scrollToSection("hero")}
+               className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-primary-dark hover:text-primary-blue"
+              >
+                Home
+              </button>
+              <button
+               onClick={() => scrollToSection("about")}
+               className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-neutral-gray hover:text-primary-blue"
+              
+              >
+                About
+              </button>
+              <button
+               onClick={() => scrollToSection("services")}
+               className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-neutral-gray hover:text-primary-blue"
+              >
+                Service
+              </button>
+              <button
+               onClick={() => scrollToSection("doctors")}
+               className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-neutral-gray hover:text-primary-blue"
+              >
+                Doctors
+              </button>
+              <button
+               onClick={() => scrollToSection("contact")}
+               className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-neutral-gray hover:text-primary-blue"
+              >
+                Contact
+              </button>
 
+            </div>
+            <div className="px-2 pt-3 pb-3 border-t border-gray-100">
+              { !isLoggedIn ? (
+                <button
+                 onClick={handleSignIn}
+                 className="block w-full px-3 py-2 text-base font-medium text-left transition-colors duration-300 rounded-md text-primary-blue hover:text-primary-dark"
+                >
+                  Sign In
+                </button>
+              ) : (
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                   onClick={handleProfileDropdown}
+                   className="flex items-center w-full px-3 py-2 space-x-3 transition-all duration-200 rounded-lg hover:bg-primary-blue/10"
+                  >
+                    {user.profileImage ? (
+                      <img
+                       src={user.profileImage}
+                       alt={`${getFullName()} profile`}
+                       className="object-cover border-2 rounded-full w-9 h-9 border-primary-blue/20 "
+                       onError={(e) => {
+                        e.target.style.display = "none";
+                       }}
+                      
+                      />
+                    ) : (
+                      <span className="flex items-center justify-center text-lg font-bold border-2 rounded-full w-9 h-9 bg-primary-blue/10 text-primary-blue border-primary-blue/20">
+                        {getInitials(user.f_name, user.l_name)}
+
+                      </span>
+
+                    )}
+                    <span className="text-sm font-semibold text-primary-dark">
+                      {role === "doctor" ? "Dr. " : ""}
+                      {role === "agent " ? "Agent " : ""}
+                      {getFullName()}
+
+                    </span>
+                    
+                  </button>
+                  {/* Mobile dropdown menu items */}
+                  {isProfileDropdownOpen && (
+                    <div className="mt-2 space-y-1">
+                      <button
+                       onClick={() => handleProfileMenuClick("profile")}
+                       className="block w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+
+                      >
+                        Profile
+                      </button>
+                      {role !== "doctor" && role !== "agent" && (
+                        <>
+                        <button
+                         onClick={() => handleProfileMenuClick("appointments")}
+                         className="block w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+                        
+                        >
+                          My Appointments
+                        </button>
+                        {/* My Bookings for Client (mobile) */}
+                        {role === "client" && (
+                          <Link
+                           to="/my-bookings"
+                           className="block w-full px-4 py-2 text-left transition-all duration-200 text-primary-dark hover:bg-primary-blue/10"
+                           onClick={() => setIsProfileDropdownOpen(false)}
+                        
+                          >
+                          
+                           My Bookings
+                          </Link>
+                        )}
+                        
+                        </>
+                      )}
+                      <button
+                       onClick={() => handleProfileMenuClick("logout")}
+                       className="block w-full px-4 py-2 text-left text-red-600 transition-all duration-200 hover:bg-red-50"
+                      
+                      >
+                        Logout
+                      </button>
+
+                    </div>
+                  )}
+                </div>
+
+              )}
+            </div>
+
+           </div>
+        )}
       </nv>
+      <Message
+       isOpen={toast.isOpen}
+       onClose={closeToast}
+       type={toast.type}
+       title={toast.title}
+       message={toast.message}
+       showCloseButton={true}
+       autoClose={true}
+       autoCloseDelay={toast.type === "info" ? 2000 : toast.type === "success" ? 3000 : 4000}
+       position="top-right"
     
-    
-    
-    
+      />
     </>
-
-
-
   );   
 };
 
