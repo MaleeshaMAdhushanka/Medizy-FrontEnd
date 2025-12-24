@@ -1,4 +1,3 @@
-import { message } from "antd";
 import { authApi, api } from "./config/api";
 import EndPoints from "./config/endpoints";
 
