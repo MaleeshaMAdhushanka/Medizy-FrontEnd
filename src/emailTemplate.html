@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medizy - Appointment Confirmation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        line-height: 1.6;
+        color: #03045e;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 20px 0;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(3, 4, 94, 0.15);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #03045e 0%, #0305b9 100%);
+        padding: 40px 40px 60px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(64, 242, 255, 0.1) 0%,
+          transparent 70%
+        );
+        transform: rotate(-45deg);
+      }
+
+      .logo-section {
+        text-align: center;
+        position: relative;
+        z-index: 2;
+      }
+
+      .logo {
+        width: 220px;
+        height: auto;
+        margin-bottom: 20px;
+        filter: brightness(0) invert(1);
+      }
+
+      .header h1 {
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        font-weight: 400;
+      }
+
+      .content {
+        padding: 0;
+      }
+
+      .greeting-section {
+        background: #ffffff;
+        padding: 40px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .greeting-section h2 {
+        color: #03045e;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+
+      .greeting-section p {
+        color: #999999;
+        font-size: 16px;
+        line-height: 1.7;
+      }
+
+      .appointment-card {
+        margin: 0 40px;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 32px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .appointment-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0305b9 0%, #40f2ff 100%);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 2px dashed #e2e8f0;
+      }
+
+      .appointment-id {
+        background: linear-gradient(135deg, #0305b9 0%, #40f2ff 100%);
+        color: #ffffff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .status-badge {
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        color: #ffffff;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .appointment-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      .detail-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .detail-icon {
+        width: 20px;
+        height: 20px;
+        background: linear-gradient(135deg, #0305b9 0%, #40f2ff 100%);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .detail-content h4 {
+        color: #03045e;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .detail-content p {
+        color: #999999;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .doctor-section {
+        background: linear-gradient(135deg, #0305b9 0%, #03045e 100%);
+        border-radius: 12px;
+        padding: 20px;
+        color: #ffffff;
+        margin-top: 8px;
+      }
+
+      .doctor-section h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .doctor-section p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .action-section {
+        padding: 40px;
+        text-align: center;
+        background: #ffffff;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #0305b9 0%, #40f2ff 100%);
+        color: #ffffff;
+        text-decoration: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px -5px rgba(3, 5, 185, 0.3);
+        margin-bottom: 20px;
+      }
+
+      .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px -5px rgba(3, 5, 185, 0.4);
+      }
+
+      .secondary-actions {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .secondary-button {
+        color: #0305b9;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        padding: 8px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .secondary-button:hover {
+        background: #f8fafc;
+        border-color: #0305b9;
+      }
+
+      .footer-section {
+        padding: 40px;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .footer-content h4 {
+        color: #03045e;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .footer-content p {
+        color: #999999;
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 20px;
+      }
+
+      .contact-item {
+        color: #0305b9;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .social-links {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .social-link {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #0305b9 0%, #40f2ff 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #ffffff;
+        transition: all 0.3s ease;
+      }
+
+      .social-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -5px rgba(3, 5, 185, 0.4);
+      }
+
+      .footer-note {
+        color: #999999;
+        font-size: 12px;
+        line-height: 1.5;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      @media (max-width: 600px) {
+        .email-container {
+          margin: 10px;
+          border-radius: 16px;
+        }
+
+        .header,
+        .greeting-section,
+        .action-section,
+        .footer-section {
+          padding: 24px;
+        }
+
+        .appointment-card {
+          margin: 0 24px;
+          padding: 24px;
+        }
+
+        .appointment-details {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .card-header {
+          flex-direction: column;
+          gap: 12px;
+          text-align: center;
+        }
+
+        .contact-info {
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .secondary-actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header Section -->
+      <div class="header">
+        <div class="logo-section">
+          <img src="../src/assets/logo/medizy.png" alt="Medizy Logo" class="logo" />
+          <p>Your trusted healthcare companion</p>
+        </div>
+      </div>
+
+      <!-- Content Section -->
+      <div class="content">
+        <!-- Greeting Section -->
+        <div class="greeting-section">
+          <h2>Hello, [Patient Name]!</h2>
+          <p>
+            We're excited to confirm your upcoming appointment. Your health and
+            well-being are our top priority, and we're here to provide you with
+            exceptional medical care.
+          </p>
+        </div>
+
+        <!-- Appointment Details Card -->
+        <div class="appointment-card">
+          <div class="card-header">
+            <div class="appointment-id">ID: [Appointment-ID]</div>
+            <div class="status-badge">Confirmed</div>
+          </div>
+
+          <div class="appointment-details">
+            <div class="detail-item">
+              <div class="detail-icon">
+                <svg width="12" height="12" fill="white" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div class="detail-content">
+                <h4>Date & Time</h4>
+                <p>[Date] at [Time]</p>
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-icon">
+                <svg width="12" height="12" fill="white" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div class="detail-content">
+                <h4>Duration</h4>
+                <p>[Duration] minutes</p>
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-icon">
+                <svg width="12" height="12" fill="white" viewBox="0 0 20 20">
+                  <path
+                    d="M2 6a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"
+                  />
+                </svg>
+              </div>
+              <div class="detail-content">
+                <h4>Consultation Type</h4>
+                <p>[Video/Physical] Consultation</p>
+              </div>
+            </div>
+
+            <div class="detail-item">
+              <div class="detail-icon">
+                <svg width="12" height="12" fill="white" viewBox="0 0 20 20">
+                  <path
+                    d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                  />
+                </svg>
+              </div>
+              <div class="detail-content">
+                <h4>Consultation Fee</h4>
+                <p>LKR [Fee]</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="doctor-section">
+            <h4>Dr. [Doctor Name]</h4>
+            <p>[Specialty] • [Experience] years experience</p>
+          </div>
+        </div>
+
+        <!-- Action Section -->
+        <div class="action-section">
+          <a href="[Meeting-Link]" class="cta-button"
+            >Join Video Consultation</a
+          >
+          <p style="color: #999999; font-size: 14px; margin-top: 12px">
+            Click the button above 5-10 minutes before your scheduled time
+          </p>
+
+          <div class="secondary-actions">
+            <a href="#" class="secondary-button">View Appointment</a>
+            <a href="#" class="secondary-button">Reschedule</a>
+            <a href="#" class="secondary-button">Cancel</a>
+          </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="footer-section">
+          <div class="footer-content">
+            <h4>Need Help?</h4>
+            <p>Our support team is here to assist you 24/7</p>
+
+            <div class="contact-info">
+              <a href="tel:+94712345678" class="contact-item"
+                >📞 +94 71 234 5678</a
+              >
+              <a href="mailto:support@medizy.lk" class="contact-item"
+                >✉️ support@medizy.lk</a
+              >
+            </div>
+
+            <div class="social-links">
+              <a href="#" class="social-link">f</a>
+              <a href="#" class="social-link">t</a>
+              <a href="#" class="social-link">in</a>
+              <a href="#" class="social-link">ig</a>
+            </div>
+
+            <div class="footer-note">
+              <p>
+                This email was sent to you because you have an upcoming
+                appointment with Medizy.<br />
+                © 2024 Medizy. All rights reserved. | Privacy Policy | Terms
+                of Service
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
